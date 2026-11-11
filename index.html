@@ -1,41 +1,37 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#5b9df6"><title>アイカツ！交換用カードチェッカー</title>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5b9df6">
+<title>アイカツ！交換用カード画像一覧</title>
 <style>
-:root{--blue:#5b9df6;--blue2:#8bc8ff;--pale:#eaf6ff;--deep:#3e6fb5;--ink:#35516f;--pink:#ff9fcf}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#eaf6ff 0,#f8fbff 240px,#fff 100%);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;color:var(--ink)}header{padding:22px 14px 14px;text-align:center}h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}.sub{font-size:12px;color:#7290ad}.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 10px 12px;max-width:900px;margin:auto}.tab{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:13px;padding:11px 2px;font-size:13px;font-weight:700;box-shadow:0 2px 7px #8abcf022}.tab.active{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent}.toolbar{max-width:900px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}.count{font-size:13px;font-weight:700;color:var(--deep)}.filters{display:flex;gap:5px}.filter{border:1px solid #d5e8fa;background:#fff;color:#6685a5;border-radius:20px;padding:6px 10px;font-size:11px}.filter.active{background:#e1f1ff;color:var(--deep);border-color:#9bcaff}.grid{max-width:1000px;margin:auto;padding:0 8px 30px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.card{position:relative;border:2px solid #dceeff;border-radius:10px;background:#fff;padding:3px;overflow:hidden;box-shadow:0 2px 6px #6da7d51a;aspect-ratio:0.72;display:flex;align-items:center;justify-content:center;cursor:pointer; -webkit-tap-highlight-color:transparent}.card img{width:100%;height:100%;object-fit:contain;display:block}.card.owned{border-color:#5b9df6;background:#edf7ff}.card.owned:after{content:"✓";position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:#5b9df6;color:#fff;font-size:15px;font-weight:900;display:grid;place-items:center;box-shadow:0 1px 4px #0002}.card.owned img{opacity:.68}.empty{grid-column:1/-1;text-align:center;color:#91a8bf;padding:40px 10px;font-size:14px}.foot{text-align:center;color:#9ab0c5;font-size:11px;padding:0 10px 25px}.reset{border:0;background:none;color:#8aa5bf;font-size:11px;text-decoration:underline;padding:4px}@media(min-width:700px){.grid{gap:12px;padding-left:14px;padding-right:14px}.card{border-radius:13px;padding:5px}.tab{font-size:15px}}
-</style></head><body>
-<header><h1>アイカツ！交換用カードチェッカー</h1><div class="sub">画像をタップして所持チェック ✧</div></header>
+:root{--blue:#5b9df6;--blue2:#8bc8ff;--pale:#eaf6ff;--deep:#3e6fb5;--ink:#35516f}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#eaf6ff 0,#f8fbff 240px,#fff 100%);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;color:var(--ink)}
+header{padding:22px 14px 14px;text-align:center}h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}.sub{font-size:12px;color:#7290ad}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 10px 12px;max-width:1000px;margin:auto}.tab{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:13px;padding:11px 2px;font-size:13px;font-weight:700;box-shadow:0 2px 7px #8abcf022}.tab.active{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent}
+.toolbar{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center}.count{font-size:13px;font-weight:700;color:var(--deep)}
+.grid{max-width:1100px;margin:auto;padding:0 8px 30px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.tile{border:2px solid #dceeff;border-radius:10px;background:#fff;padding:3px;overflow:hidden;box-shadow:0 2px 6px #6da7d51a;aspect-ratio:.72;display:flex;align-items:center;justify-content:center}.tile img{width:100%;height:100%;object-fit:contain;display:block}.empty{grid-column:1/-1;text-align:center;color:#91a8bf;padding:40px 10px;font-size:14px}.foot{text-align:center;color:#9ab0c5;font-size:11px;padding:0 10px 25px}
+@media(max-width:380px){.grid{gap:5px;padding-left:5px;padding-right:5px}.tile{padding:2px;border-radius:7px}.tab{font-size:11px}}
+@media(min-width:700px){.grid{gap:12px;padding-left:14px;padding-right:14px}.tile{border-radius:13px;padding:5px}.tab{font-size:15px}}
+</style>
+</head>
+<body>
+<header><h1>アイカツ！交換用カード画像一覧</h1><div class="sub">シリーズを選んで画像をチェック ✧</div></header>
 <nav class="tabs" id="tabs"></nav>
-<div class="toolbar"><div class="count" id="count">読み込み中…</div><div class="filters"><button class="filter active" data-filter="all">すべて</button><button class="filter" data-filter="owned">所持</button><button class="filter" data-filter="unowned">未所持</button></div></div>
-<main class="grid" id="grid"></main><div class="foot">チェック内容はこの端末のブラウザに自動保存されます<br><button class="reset" id="reset">このシリーズのチェックをリセット</button></div>
+<div class="toolbar"><div class="count" id="count">画像を読み込み中…</div></div>
+<main class="grid" id="grid"></main>
+<div class="foot">画像一覧専用ページ</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const SERIES=['初代','スターズ','フレンズ','オンパレード'];
-const FILES={"初代": ["IMG_6063.PNG", "IMG_6064.PNG", "IMG_6065.PNG", "IMG_6066.PNG", "IMG_6067.PNG", "IMG_6068.PNG", "IMG_6069.PNG", "IMG_6070.PNG", "IMG_6071.PNG", "IMG_6072.PNG", "IMG_6073.PNG", "IMG_6074.PNG", "IMG_6075.PNG", "IMG_6076.PNG", "IMG_6077.PNG", "IMG_6078.PNG", "IMG_6079.PNG", "IMG_6080.PNG", "IMG_6081.PNG", "IMG_6082.PNG", "IMG_6083.PNG", "IMG_6084.PNG", "IMG_6085.PNG", "IMG_6086.PNG", "IMG_6087.PNG", "IMG_6088.PNG", "IMG_6089.PNG", "IMG_6090.PNG", "IMG_6091.PNG", "IMG_6092.PNG", "IMG_6093.PNG", "IMG_6094.PNG", "IMG_6095.PNG", "IMG_6096.PNG", "IMG_6097.PNG", "IMG_6098.PNG", "IMG_6099.PNG", "IMG_6100.PNG", "IMG_6101.PNG", "IMG_6102.PNG", "IMG_6103.PNG", "IMG_6104.PNG", "IMG_6105.PNG", "IMG_6106.PNG", "IMG_6107.PNG", "IMG_6108.PNG", "IMG_6109.PNG", "IMG_6110.PNG", "IMG_6111.PNG", "IMG_6112.PNG", "IMG_6113.PNG", "IMG_6114.PNG", "IMG_6115.PNG", "IMG_6116.PNG", "IMG_6117.PNG", "IMG_6118.PNG", "IMG_6119.PNG", "IMG_6120.PNG", "IMG_6121.PNG", "IMG_6122.PNG", "IMG_6123.PNG", "IMG_6124.PNG", "IMG_6125.PNG", "IMG_6126.PNG", "IMG_6127.PNG", "IMG_6128.PNG", "IMG_6129.PNG", "IMG_6130.PNG", "IMG_6131.PNG", "IMG_6132.PNG", "IMG_6133.PNG", "IMG_6134.PNG", "IMG_6135.PNG", "IMG_6136.PNG", "IMG_6137.PNG", "IMG_6138.PNG", "IMG_6139.PNG", "IMG_6140.PNG", "IMG_6141.PNG", "IMG_6142.PNG", "IMG_6143.PNG", "IMG_6145.PNG", "IMG_6146.PNG", "IMG_6147.PNG"], "スターズ": ["IMG_6153.PNG", "IMG_6154.PNG", "IMG_6155.PNG", "IMG_6156.PNG", "IMG_6157.PNG", "IMG_6158.PNG", "IMG_6159.PNG", "IMG_6160.PNG", "IMG_6161.PNG", "IMG_6162.PNG", "IMG_6163.PNG", "IMG_6164.PNG", "IMG_6165.PNG", "IMG_6166.PNG", "IMG_6167.PNG", "IMG_6168.PNG", "IMG_6169.PNG", "IMG_6170.PNG", "IMG_6171.PNG", "IMG_6172.PNG", "IMG_6173.PNG", "IMG_6174.PNG", "IMG_6175.PNG", "IMG_6176.PNG", "IMG_6177.PNG", "IMG_6178.PNG", "IMG_6179.PNG", "IMG_6180.PNG", "IMG_6181.PNG", "IMG_6182.PNG", "IMG_6183.PNG", "IMG_6184.PNG", "IMG_6185.PNG", "IMG_6186.PNG", "IMG_6187.PNG", "IMG_6188.PNG", "IMG_6189.PNG", "IMG_6190.PNG", "IMG_6191.PNG", "IMG_6192.PNG", "IMG_6193.PNG", "IMG_6194.PNG", "IMG_6195.PNG", "IMG_6196.PNG", "IMG_6197.PNG", "IMG_6198.PNG", "IMG_6199.PNG", "IMG_6200.PNG", "IMG_6201.PNG", "IMG_6202.PNG", "IMG_6203.PNG", "IMG_6204.PNG", "IMG_6205.PNG", "IMG_6206.PNG", "IMG_6207.PNG", "IMG_6208.PNG", "IMG_6209.PNG", "IMG_6210.PNG", "IMG_6211.PNG", "IMG_6212.PNG", "IMG_6213.PNG", "IMG_6214.PNG", "IMG_6215.PNG", "IMG_6216.PNG"], "フレンズ": ["IMG_6217.PNG", "IMG_6218.PNG", "IMG_6219.PNG", "IMG_6220.PNG", "IMG_6221.PNG", "IMG_6222.PNG", "IMG_6223.PNG", "IMG_6224.PNG", "IMG_6225.PNG", "IMG_6226.PNG", "IMG_6227.PNG", "IMG_6228.PNG", "IMG_6229.PNG", "IMG_6230.PNG", "IMG_6231.PNG", "IMG_6232.PNG", "IMG_6233.PNG", "IMG_6234.PNG", "IMG_6235.PNG", "IMG_6236.PNG", "IMG_6237.PNG", "IMG_6238.PNG", "IMG_6239.PNG", "IMG_6240.PNG", "IMG_6241.PNG", "IMG_6242.PNG", "IMG_6243.PNG", "IMG_6244.PNG", "IMG_6245.PNG", "IMG_6246.PNG", "IMG_6247.PNG", "IMG_6248.PNG", "IMG_6249.PNG", "IMG_6250.PNG", "IMG_6251.PNG", "IMG_6252.PNG", "IMG_6253.PNG", "IMG_6254.PNG", "IMG_6255.PNG", "IMG_6256.PNG", "IMG_6257.PNG", "IMG_6258.PNG", "IMG_6259.PNG", "IMG_6260.PNG", "IMG_6261.PNG", "IMG_6262.PNG", "IMG_6263.PNG", "IMG_6264.PNG"], "オンパレード": ["IMG_6265.PNG", "IMG_6266.PNG", "IMG_6267.PNG", "IMG_6268.PNG", "IMG_6269.PNG", "IMG_6270.PNG", "IMG_6271.PNG", "IMG_6272.PNG", "IMG_6273.PNG", "IMG_6274.PNG", "IMG_6275.PNG", "IMG_6276.PNG", "IMG_6277.PNG", "IMG_6278.PNG", "IMG_6279.PNG", "IMG_6280.PNG", "IMG_6281.PNG", "IMG_6282.PNG", "IMG_6283.PNG", "IMG_6284.PNG", "IMG_6285.PNG", "IMG_6286.PNG", "IMG_6287.PNG"]};
-
-let imageUrls={};
-async function loadImages(){
-  const grid=document.getElementById('grid');
-  document.getElementById('count').textContent='画像を読み込み中…';
-  try{
-    const response=await fetch('aikatsu-images.zip');
-    if(!response.ok) throw new Error('ZIPを読み込めません');
-    const zip=await JSZip.loadAsync(await response.arrayBuffer());
-    for(const name of Object.keys(zip.files)){
-      if(zip.files[name].dir || !name.startsWith('images/')) continue;
-      const blob=await zip.files[name].async('blob');
-      imageUrls[name]=URL.createObjectURL(blob);
-    }
-    renderTabs();render();
-  }catch(error){
-    document.getElementById('count').textContent='画像を読み込めません。ZIPのアップロードを確認してください';
-    grid.innerHTML='<div class=\"empty\">aikatsu-images.zip が見つかりません</div>'
-  }
-}
-
-let current='初代',filter='all';let owned={};try{owned=JSON.parse(localStorage.getItem('aikatsuTradeOwnedV1')||'{}')||{}}catch(e){}
+let current='初代', imageUrls={};
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
-function key(s,f){return s+'/'+f}function save(){localStorage.setItem('aikatsuTradeOwnedV1',JSON.stringify(owned))}
-function renderTabs(){tabs.innerHTML='';SERIES.forEach(s=>{const b=document.createElement('button');b.className='tab'+(s===current?' active':'');b.textContent=s;b.onclick=()=>{current=s;filter='all';document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x.dataset.filter==='all'));renderTabs();render()};tabs.appendChild(b)})}
-function render(){const arr=FILES[current]||[];const have=arr.filter(f=>owned[key(current,f)]).length;count.textContent=`${current}　${have} / ${arr.length} 枚 所持`;grid.innerHTML='';let shown=arr.filter(f=>filter==='all'||(filter==='owned'?!!owned[key(current,f)]:!owned[key(current,f)]));if(!shown.length){grid.innerHTML='<div class="empty">表示するカードはありません</div>';return}shown.forEach(f=>{const el=document.createElement('button');el.type='button';el.className='card'+(owned[key(current,f)]?' owned':'');el.setAttribute('aria-label',owned[key(current,f)]?'所持済み。タップで未所持にする':'未所持。タップで所持済みにする');const img=document.createElement('img');img.loading='lazy';img.alt='';img.src=imageUrls['images/'+current+'/'+f]||'';el.appendChild(img);el.onclick=()=>{const k=key(current,f);owned[k]=!owned[k];if(!owned[k])delete owned[k];save();render()};grid.appendChild(el)})}
-document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));render()});document.getElementById('reset').onclick=()=>{if(!confirm(current+'の所持チェックをすべてリセットしますか？'))return;Object.keys(owned).filter(k=>k.startsWith(current+'/')).forEach(k=>delete owned[k]);save();render()};loadImages();
-</script></body></html>
+function renderTabs(){tabs.innerHTML='';SERIES.forEach(s=>{const b=document.createElement('button');b.className='tab'+(s===current?' active':'');b.textContent=s;b.onclick=()=>{current=s;renderTabs();render()};tabs.appendChild(b)})}
+function render(){const files=Object.keys(imageUrls).filter(k=>k.startsWith('images/'+current+'/')).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));count.textContent=current+'　'+files.length+'枚';grid.innerHTML='';if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}files.forEach(path=>{const box=document.createElement('div');box.className='tile';const img=document.createElement('img');img.loading='lazy';img.alt='';img.src=imageUrls[path];box.appendChild(img);grid.appendChild(box)})}
+async function loadImages(){try{const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');const zip=await JSZip.loadAsync(await response.arrayBuffer());const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/'));for(const path of entries){const blob=await zip.files[path].async('blob');imageUrls[path]=URL.createObjectURL(blob)}renderTabs();render()}catch(e){count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}}
+loadImages();
+</script>
+</body>
+</html>
