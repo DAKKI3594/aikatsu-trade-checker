@@ -9,11 +9,20 @@
 :root{--blue:#5b9df6;--blue2:#8bc8ff;--pale:#eaf6ff;--deep:#3e6fb5;--ink:#35516f}
 *{box-sizing:border-box}
 body{margin:0;background:linear-gradient(180deg,#eaf6ff 0,#f8fbff 240px,#fff 100%);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;color:var(--ink)}
-header{padding:22px 14px 14px;text-align:center}h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}.sub{font-size:12px;color:#7290ad}
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 10px 12px;max-width:1000px;margin:auto}.tab{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:13px;padding:11px 2px;font-size:13px;font-weight:700;box-shadow:0 2px 7px #8abcf022}.tab.active{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent}
-.toolbar{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center}.count{font-size:13px;font-weight:700;color:var(--deep)}
-.grid{max-width:1100px;margin:auto;padding:0 8px 30px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.tile{border:2px solid #dceeff;border-radius:10px;background:#fff;padding:3px;overflow:hidden;box-shadow:0 2px 6px #6da7d51a;aspect-ratio:.72;display:flex;align-items:center;justify-content:center}.tile img{width:100%;height:100%;object-fit:contain;display:block}.empty{grid-column:1/-1;text-align:center;color:#91a8bf;padding:40px 10px;font-size:14px}.foot{text-align:center;color:#9ab0c5;font-size:11px;padding:0 10px 25px}
-@media(max-width:380px){.grid{gap:5px;padding-left:5px;padding-right:5px}.tile{padding:2px;border-radius:7px}.tab{font-size:11px}}
+header{padding:22px 14px 14px;text-align:center}
+h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
+.sub{font-size:12px;color:#7290ad}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:0 8px 12px;max-width:1000px;margin:auto}
+.tab{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:13px;padding:11px 2px;font-size:12px;font-weight:700;box-shadow:0 2px 7px #8abcf022;white-space:nowrap}
+.tab.active{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent}
+.toolbar{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center}
+.count{font-size:13px;font-weight:700;color:var(--deep)}
+.grid{max-width:1100px;margin:auto;padding:0 8px 30px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.tile{border:2px solid #dceeff;border-radius:10px;background:#fff;padding:3px;overflow:hidden;box-shadow:0 2px 6px #6da7d51a;aspect-ratio:.72;display:flex;align-items:center;justify-content:center}
+.tile img{width:100%;height:100%;object-fit:contain;display:block}
+.empty{grid-column:1/-1;text-align:center;color:#91a8bf;padding:40px 10px;font-size:14px}
+.foot{text-align:center;color:#9ab0c5;font-size:11px;padding:0 10px 25px}
+@media(max-width:380px){.grid{gap:5px;padding-left:5px;padding-right:5px}.tile{padding:2px;border-radius:7px}.tab{font-size:10px;padding-left:0;padding-right:0;border-radius:10px}}
 @media(min-width:700px){.grid{gap:12px;padding-left:14px;padding-right:14px}.tile{border-radius:13px;padding:5px}.tab{font-size:15px}}
 </style>
 </head>
@@ -25,12 +34,12 @@ header{padding:22px 14px 14px;text-align:center}h1{font-size:21px;color:var(--de
 <div class="foot">画像一覧専用ページ</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-const SERIES=['初代','スターズ','フレンズ','オンパレード'];
+const SERIES=['初代','スターズ','フレンズ','オンパレード','プロモーション'];
 let current='初代', imageUrls={};
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
 function renderTabs(){tabs.innerHTML='';SERIES.forEach(s=>{const b=document.createElement('button');b.className='tab'+(s===current?' active':'');b.textContent=s;b.onclick=()=>{current=s;renderTabs();render()};tabs.appendChild(b)})}
 function render(){const files=Object.keys(imageUrls).filter(k=>k.startsWith('images/'+current+'/')).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));count.textContent=current+'　'+files.length+'枚';grid.innerHTML='';if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}files.forEach(path=>{const box=document.createElement('div');box.className='tile';const img=document.createElement('img');img.loading='lazy';img.alt='';img.src=imageUrls[path];box.appendChild(img);grid.appendChild(box)})}
-async function loadImages(){try{const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');const zip=await JSZip.loadAsync(await response.arrayBuffer(),{decodeFileName:bytes=>new TextDecoder('utf-8').decode(bytes)});const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));for(const path of entries){const normalized=path.normalize('NFC');const blob=await zip.files[path].async('blob');imageUrls[normalized]=URL.createObjectURL(blob)}renderTabs();render()}catch(e){count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}}
+async function loadImages(){try{const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');const zip=await JSZip.loadAsync(await response.arrayBuffer());const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));for(const path of entries){const blob=await zip.files[path].async('blob');imageUrls[path]=URL.createObjectURL(blob)}renderTabs();render()}catch(e){console.error(e);count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}}
 loadImages();
 </script>
 </body>
