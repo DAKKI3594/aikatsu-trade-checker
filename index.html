@@ -90,7 +90,11 @@ function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択�
 async function loadOneImage(path,img){if(imageUrls[path]){img.src=imageUrls[path];return}if(!loadingImages[path]){loadingImages[path]=imageEntries[path].async('blob').then(blob=>{imageUrls[path]=URL.createObjectURL(blob);return imageUrls[path]}).finally(()=>delete loadingImages[path])}try{const url=await loadingImages[path];if(img.isConnected)img.src=url}catch(e){img.alt='画像を読み込めません'}}
 const imageObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){const img=entry.target;imageObserver.unobserve(img);loadOneImage(img.dataset.path,img)}}),{rootMargin:'250px'}):null;
 function orderedFiles(s){
- if(s==='すべて')return SERIES.flatMap(name=>orderedFiles(name)).sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)));
+ if(s==='すべて'){
+  const files=SERIES.flatMap(name=>orderedFiles(name)),saved=orders['すべて']||[];
+  const valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p));
+  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)));
+ }
  const files=seriesFiles(s),saved=orders[s]||[],valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
 }
@@ -129,6 +133,8 @@ async function saveGalleryState(){
  orders[current]=[...grid.querySelectorAll('.tile')].map(el=>el.dataset.path);
  const allOrders={...orders};
  for(const s of SERIES){const files=seriesFiles(s),saved=allOrders[s]||[];allOrders[s]=[...saved.filter(p=>files.includes(p)),...files.filter(p=>!saved.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}))]}
+ const allFiles=SERIES.flatMap(s=>seriesFiles(s)),allSaved=allOrders['すべて']||[];
+ allOrders['すべて']=[...allSaved.filter(p=>allFiles.includes(p)),...allFiles.filter(p=>!allSaved.includes(p))];
  try{
   await stateRef.set({orders:allOrders,priority:priority.filter(p=>Object.prototype.hasOwnProperty.call(imageEntries,p)),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   orders=allOrders;dirty=false;saveButton.hidden=true;authStatus.textContent='保存しました';render();
