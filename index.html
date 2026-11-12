@@ -40,9 +40,11 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .star{position:absolute;right:4px;top:4px;border:0;border-radius:50%;width:27px;height:27px;background:#ffffffed;color:#9aabbc;font-size:17px;line-height:1;display:none;padding:0}
 .tile.isAdmin .star{display:block}
 .tile.priority .star{color:#f0ad00}
-.drag{position:absolute;left:4px;top:4px;border:0;border-radius:7px;background:#ffffffed;color:var(--deep);font-size:15px;width:27px;height:27px;display:none;padding:0;touch-action:none}
-.tile.isAdmin .drag{display:block}
-.tile.dragging{opacity:.35}
+.orderControls{position:absolute;left:3px;right:3px;bottom:3px;display:none;grid-template-columns:repeat(4,1fr);gap:3px;padding:3px;border-radius:8px;background:#ffffffed;box-shadow:0 1px 5px #4776a533}
+.tile.isAdmin .orderControls{display:grid}
+.orderControls button{border:0;border-radius:6px;background:#e8f3ff;color:var(--deep);font-size:14px;font-weight:700;min-width:0;height:27px;padding:0;touch-action:manipulation}
+.orderControls button:active{background:#c9e3ff}
+.orderControls button:disabled{opacity:.3}
 .empty{grid-column:1/-1;text-align:center;color:#91a8bf;padding:40px 10px;font-size:14px}
 .foot{text-align:center;color:#9ab0c5;font-size:11px;padding:0 10px 25px}
 @media(max-width:380px){.grid{gap:5px;padding-left:5px;padding-right:5px}.tile{padding:2px;border-radius:7px}}
@@ -116,12 +118,11 @@ function render(){
   if(isAdmin){
    const star=document.createElement('button');star.className='star';star.type='button';star.textContent=priority.includes(path)?'★':'☆';star.title='最優先に設定';
    star.onclick=()=>{if(priority.includes(path))priority=priority.filter(x=>x!==path);else priority.push(path);markDirty();render()};
-   const handle=document.createElement('button');handle.className='drag';handle.type='button';handle.textContent='↕';handle.title='長押しして並べ替え';
-   handle.addEventListener('pointerdown',e=>{e.preventDefault();dragged=box;box.classList.add('dragging');handle.setPointerCapture(e.pointerId)});
-   handle.addEventListener('pointermove',e=>{if(!dragged)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.tile');if(target&&target!==dragged&&target.parentElement===grid){const r=target.getBoundingClientRect();grid.insertBefore(dragged,e.clientY<r.top+r.height/2?target:target.nextSibling)}});
-   const finish=()=>{if(!dragged)return;dragged.classList.remove('dragging');dragged=null;orders[current]=[...grid.querySelectorAll('.tile')].map(el=>el.dataset.path);markDirty()};
-   handle.addEventListener('pointerup',finish);handle.addEventListener('pointercancel',finish);
-   box.append(star,handle);
+   const controls=document.createElement('div');controls.className='orderControls';
+   const move=(from,to)=>{const list=[...grid.querySelectorAll('.tile')].map(el=>el.dataset.path);if(to<0||to>=list.length||from===to)return;const item=list.splice(from,1)[0];list.splice(to,0,item);orders[current]=list;render();markDirty()};
+   const index=files.indexOf(path);
+   [['⏫',0,'先頭へ'],['↑',index-1,'上へ'],['↓',index+1,'下へ'],['⏬',files.length-1,'最後へ']].forEach(([label,to,title])=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.title=title;button.setAttribute('aria-label',title);button.disabled=(to===index)||(label==='↑'&&index===0)||(label==='↓'&&index===files.length-1);button.onclick=()=>move(index,to);controls.appendChild(button)});
+   box.append(star,controls);
   }
   grid.appendChild(box);
  });
