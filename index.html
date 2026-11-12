@@ -114,7 +114,7 @@ function orderedFiles(s){
  const files=seriesFiles(s),saved=orders[s]||[],valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
 }
-function markDirty(){dirty=true;saveButton.hidden=!(isAdmin&&reorderMode);authStatus.textContent='未保存の変更あり'}
+function markDirty(){dirty=true;saveButton.hidden=!isAdmin;authStatus.textContent='未保存の変更あり'}
 function renderTabs(){tabs.innerHTML='';const select=document.createElement('select');select.setAttribute('aria-label','シリーズを選択');[['すべて','すべて'],['最優先','★ 最優先'],...SERIES.map(s=>[s,s])].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option)});select.value=current;select.onchange=()=>{current=select.value;render()};tabs.appendChild(select)}
 function render(){
  const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(current==='すべて'||current==='最優先'?'':(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':''));
@@ -172,7 +172,7 @@ auth.onAuthStateChanged(user=>{
  if(!isAdmin)reorderMode=false;
  reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';
  authStatus.textContent=isAdmin?'管理者ログイン中':user?'閲覧モード（編集権限なし）':'未ログイン';
- saveButton.hidden=!(isAdmin&&reorderMode&&dirty);render();
+ saveButton.hidden=!(isAdmin&&dirty);render();
 });
 async function loadImages(){
  try{
