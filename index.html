@@ -65,7 +65,7 @@ let current='初代',imageUrls={},orders={},priority=[],currentUser=null,isAdmin
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
 const authStatus=document.getElementById('authStatus'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
 const stateRef=db.collection('tradeGallery').doc('main');
-function seriesFiles(s){return Object.keys(imageUrls).filter(p=>p.startsWith('images/'+s+'/'))}
+function seriesFiles(s){return Object.keys(imageUrls).filter(p=>p.startsWith('aikatsu-images/'+s+'/'))}
 function orderedFiles(s){
  const files=seriesFiles(s),saved=orders[s]||[],valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
@@ -73,7 +73,7 @@ function orderedFiles(s){
 function markDirty(){dirty=true;saveButton.hidden=!isAdmin;authStatus.textContent='未保存の変更あり'}
 function renderTabs(){tabs.innerHTML='';SERIES.forEach(s=>{const b=document.createElement('button');b.className='tab'+(s===current?' active':'');b.textContent=s;b.onclick=()=>{current=s;renderTabs();render()};tabs.appendChild(b)})}
 function render(){
- const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':'');
+ const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(priority.filter(p=>p.startsWith('aikatsu-images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('aikatsu-images/'+current+'/')).length+'枚':'');
  grid.innerHTML='';
  if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}
  files.forEach(path=>{
@@ -127,7 +127,7 @@ async function loadImages(){
  try{
   const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');
   const zip=await JSZip.loadAsync(await response.arrayBuffer());
-  const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));
+  const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('aikatsu-images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));
   for(const path of entries){const blob=await zip.files[path].async('blob');imageUrls[path]=URL.createObjectURL(blob)}
   await loadGalleryState();renderTabs();render();
  }catch(e){console.error(e);count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}
