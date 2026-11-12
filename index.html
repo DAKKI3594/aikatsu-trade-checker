@@ -19,7 +19,10 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .tabs{padding:0 12px 12px;max-width:1000px;margin:auto}
 .tabs select{width:100%;border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:13px;padding:13px 14px;font-size:15px;font-weight:700;box-shadow:0 2px 7px #8abcf022;}
 .toolbarActions{display:flex;align-items:center;gap:8px}
-.settingsButton{width:40px;height:40px;border:1px solid #dceaff;border-radius:12px;background:#fff;font-size:21px}
+.headerTitle{display:flex;align-items:center;justify-content:center;gap:10px}
+.headerTitle h1{margin:0}
+.settingsButton{width:34px;height:34px;flex:0 0 34px;border:1px solid #bfe5ff;border-radius:10px;background:#e8f7ff;color:#55b9ed;font-size:23px;line-height:1;padding:0}
+.settingsButton:active{background:#d5f0ff}
 .settingsPanel{margin:0 12px 12px;padding:13px;border:1px solid #dceaff;border-radius:13px;background:#f8fbff}
 .settingsHeading{font-weight:800;color:var(--deep);margin-bottom:8px}
 .settingsRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #e5effa;font-size:13px}
@@ -60,7 +63,7 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 </style>
 </head>
 <body>
-<header><h1>アイカツ！求めリスト</h1><div class="sub">シリーズを選んで画像をチェック ✧</div></header>
+<header><div class="headerTitle"><h1>アイカツ！求めリスト</h1><button id="settingsButton" class="settingsButton" type="button" aria-label="設定" aria-expanded="false">⚙</button></div><div class="sub">シリーズを選んで画像をチェック ✧</div></header>
 <section class="notice">
   <div class="noticeTitle">【お取引について】</div>
   <p>お声がけの際は、X（<a href="https://x.com/__DAKKI__" target="_blank" rel="noopener noreferrer">@__DAKKI__</a>）までご連絡をお願いいたします。</p>
@@ -69,7 +72,7 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 <nav class="tabs" id="tabs"></nav>
 <div class="toolbar">
   <div class="count" id="count">画像を読み込み中…</div>
-  <div class="toolbarActions"><button id="refreshButton" type="button">↻ 最新状態に更新</button><button id="settingsButton" class="settingsButton" type="button" aria-label="設定" aria-expanded="false">⚙️</button></div>
+  <div class="toolbarActions"><button id="refreshButton" type="button">↻ 最新状態に更新</button></div>
 </div>
 <section class="settingsPanel" id="settingsPanel" hidden>
   <div class="settingsHeading">⚙️ 設定</div>
@@ -123,7 +126,7 @@ function render(){
  files.forEach(path=>{
   const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin&&reorderMode?' isAdmin':'');box.dataset.path=path;
   const img=document.createElement('img');img.loading='lazy';img.alt='';img.dataset.path=path;box.appendChild(img);if(imageObserver)imageObserver.observe(img);else loadOneImage(path,img);
-  const pick=document.createElement('label');pick.className='pick';const check=document.createElement('input');check.type='checkbox';check.dataset.path=path;check.checked=selected.has(path);check.onchange=()=>{if(check.checked)selected.add(path);else selected.delete(path);updateSelectionUI()};pick.append(check,document.createTextNode('選択'));box.appendChild(pick);
+  if(!(isAdmin&&reorderMode)){const pick=document.createElement('label');pick.className='pick';const check=document.createElement('input');check.type='checkbox';check.dataset.path=path;check.checked=selected.has(path);check.onchange=()=>{if(check.checked)selected.add(path);else selected.delete(path);updateSelectionUI()};pick.append(check,document.createTextNode('選択'));box.appendChild(pick);}
   if(isAdmin&&reorderMode){
    const star=document.createElement('button');star.className='star';star.type='button';star.textContent=priority.includes(path)?'★':'☆';star.title='最優先に設定';
    star.onclick=()=>{if(priority.includes(path))priority=priority.filter(x=>x!==path);else priority.push(path);markDirty();render()};
