@@ -56,7 +56,11 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .reorderPad{position:fixed;z-index:20;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:190px;padding:9px 12px 11px;border:1px solid #bfe5ff;border-radius:18px;background:#ffffffef;box-shadow:0 4px 18px #4776a544;backdrop-filter:blur(8px);display:none;text-align:center}
 .reorderPad.visible{display:block}
 .reorderPadLabel{font-size:11px;font-weight:800;color:var(--deep);margin-bottom:7px;white-space:nowrap}
-.directionPad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,42px);justify-content:center;gap:5px}
+.directionPad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,42px);justify-content:center;gap:5px}
+.directionPad button[data-direction="up"]{grid-column:2;grid-row:1}
+.directionPad button[data-direction="left"]{grid-column:1;grid-row:2}
+.directionPad button[data-direction="down"]{grid-column:2;grid-row:3}
+.directionPad button[data-direction="right"]{grid-column:3;grid-row:2}
 .directionPad button{border:1px solid #b8def8;border-radius:12px;background:linear-gradient(180deg,#f5fbff,#dff2ff);color:#4a9bd0;font-size:23px;font-weight:900;line-height:1;box-shadow:0 2px 3px #75bce533;touch-action:manipulation}
 .directionPad button:active:not(:disabled){background:#c6eaff;transform:translateY(1px)}
 .directionPad button:disabled{opacity:.3}
