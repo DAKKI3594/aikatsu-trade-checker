@@ -97,7 +97,8 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 </section>
 <div class="viewerTools"><span id="selectedCount">0枚選択中</span><button id="makeListButton" type="button" disabled>お譲り可能リストを画像化</button></div>
 <section id="listPreview" aria-live="polite"></section>
-<main class="grid" id="grid"></main>\n<section class="reorderPad" id="reorderPad" aria-label="カード移動コントローラー"><div class="reorderPadLabel" id="reorderPadLabel">カードをタップして選択</div><div class="directionPad"><button type="button" data-direction="up" aria-label="上へ">↑</button><button type="button" data-direction="left" aria-label="左へ">←</button><button type="button" data-direction="down" aria-label="下へ">↓</button><button type="button" data-direction="right" aria-label="右へ">→</button></div></section>
+<main class="grid" id="grid"></main>
+<section class="reorderPad" id="reorderPad" aria-label="カード移動コントローラー"><div class="reorderPadLabel" id="reorderPadLabel">カードをタップして選択</div><div class="directionPad"><button type="button" data-direction="up" aria-label="上へ">↑</button><button type="button" data-direction="left" aria-label="左へ">←</button><button type="button" data-direction="down" aria-label="下へ">↓</button><button type="button" data-direction="right" aria-label="右へ">→</button></div></section>
 <div class="foot">画像一覧専用ページ</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -111,7 +112,8 @@ firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
 let current='すべて',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,reorderMode=false,dirty=false,reorderTarget=null;
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
-const reorderPad=document.getElementById('reorderPad'),reorderPadLabel=document.getElementById('reorderPadLabel');\nconst authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),settingsButton=document.getElementById('settingsButton'),settingsPanel=document.getElementById('settingsPanel'),reorderButton=document.getElementById('reorderButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
+const reorderPad=document.getElementById('reorderPad'),reorderPadLabel=document.getElementById('reorderPadLabel');
+const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),settingsButton=document.getElementById('settingsButton'),settingsPanel=document.getElementById('settingsPanel'),reorderButton=document.getElementById('reorderButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
 const stateRef=db.collection('tradeGallery').doc('main');
 function seriesFiles(s){return Object.keys(imageEntries).filter(p=>s==='すべて'?p.startsWith('images/'):p.startsWith('images/'+s+'/'))}
 function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択中';makeListButton.disabled=!selected.size}
