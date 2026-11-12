@@ -169,6 +169,28 @@ async function saveGalleryState(){
 saveButton.onclick=saveGalleryState;
 settingsButton.onclick=()=>{settingsPanel.hidden=!settingsPanel.hidden;settingsButton.setAttribute('aria-expanded',String(!settingsPanel.hidden))};
 reorderButton.onclick=()=>{if(!isAdmin)return;reorderMode=!reorderMode;reorderTarget=null;reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';render()};
+reorderPad.querySelectorAll('[data-direction]').forEach(button=>{
+ button.addEventListener('click',()=>{
+  if(!isAdmin||!reorderMode||!reorderTarget)return;
+  const tiles=[...grid.querySelectorAll('.tile')];
+  const paths=tiles.map(tile=>tile.dataset.path);
+  const from=paths.indexOf(reorderTarget);
+  if(from<0)return;
+  const columns=Math.max(1,tiles.length?getComputedStyle(grid).gridTemplateColumns.trim().split(/\\s+/).length:1);
+  const direction=button.dataset.direction;
+  let to=from;
+  if(direction==='left'&&from%columns!==0)to=from-1;
+  if(direction==='right'&&from%columns!==columns-1&&from+1<paths.length)to=from+1;
+  if(direction==='up'&&from-columns>=0)to=from-columns;
+  if(direction==='down'&&from+columns<paths.length)to=from+columns;
+  if(to===from)return;
+  const moved=paths.splice(from,1)[0];
+  paths.splice(to,0,moved);
+  orders[current]=paths;
+  render();
+  markDirty();
+ });
+});
 loginButton.onclick=async()=>{
  loginButton.disabled=true;authStatus.textContent='ログイン中…';
  try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())}
