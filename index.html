@@ -90,6 +90,7 @@ function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択�
 async function loadOneImage(path,img){if(imageUrls[path]){img.src=imageUrls[path];return}if(!loadingImages[path]){loadingImages[path]=imageEntries[path].async('blob').then(blob=>{imageUrls[path]=URL.createObjectURL(blob);return imageUrls[path]}).finally(()=>delete loadingImages[path])}try{const url=await loadingImages[path];if(img.isConnected)img.src=url}catch(e){img.alt='画像を読み込めません'}}
 const imageObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){const img=entry.target;imageObserver.unobserve(img);loadOneImage(img.dataset.path,img)}}),{rootMargin:'250px'}):null;
 function orderedFiles(s){
+ if(s==='最優先')return orderedFiles('すべて').filter(p=>priority.includes(p));
  if(s==='すべて'){
   const files=SERIES.flatMap(name=>orderedFiles(name)),saved=orders['すべて']||[];
   const valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p));
@@ -99,9 +100,9 @@ function orderedFiles(s){
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
 }
 function markDirty(){dirty=true;saveButton.hidden=!isAdmin;authStatus.textContent='未保存の変更あり'}
-function renderTabs(){tabs.innerHTML='';const select=document.createElement('select');select.setAttribute('aria-label','シリーズを選択');[['すべて','すべて'],...SERIES.map(s=>[s,s])].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option)});select.value=current;select.onchange=()=>{current=select.value;render()};tabs.appendChild(select)}
+function renderTabs(){tabs.innerHTML='';const select=document.createElement('select');select.setAttribute('aria-label','シリーズを選択');[['すべて','すべて'],['最優先','★ 最優先'],...SERIES.map(s=>[s,s])].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option)});select.value=current;select.onchange=()=>{current=select.value;render()};tabs.appendChild(select)}
 function render(){
- const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':'');
+ const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(current==='すべて'||current==='最優先'?'':(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':''));
  grid.innerHTML='';
  if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}
  files.forEach(path=>{
