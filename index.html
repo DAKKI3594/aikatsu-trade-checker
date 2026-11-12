@@ -186,6 +186,7 @@ reorderPad.querySelectorAll('[data-direction]').forEach(button=>{
   if(direction==='up'&&from-columns>=0)to=from-columns;
   if(direction==='down'&&from+columns<paths.length)to=from+columns;
   if(to===from)return;
+  if(current!=='最優先'&&priority.includes(paths[from])!==priority.includes(paths[to]))return;
   const moved=paths.splice(from,1)[0];
   paths.splice(to,0,moved);
   orders[current]=paths;
