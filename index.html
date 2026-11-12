@@ -178,7 +178,7 @@ reorderPad.querySelectorAll('[data-direction]').forEach(button=>{
   const paths=tiles.map(tile=>tile.dataset.path);
   const from=paths.indexOf(reorderTarget);
   if(from<0)return;
-  const columns=Math.max(1,tiles.length?getComputedStyle(grid).gridTemplateColumns.trim().split(/\\s+/).length:1);
+  const columns=Math.max(1,tiles.length?getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length:1);
   const direction=button.dataset.direction;
   let to=from;
   if(direction==='left'&&from%columns!==0)to=from-1;
