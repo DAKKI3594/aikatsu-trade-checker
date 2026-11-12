@@ -50,7 +50,8 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .tile img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
 .tile.priority{border-color:#f3c95b;box-shadow:0 0 0 2px #ffe8a4}
 .star{position:absolute;right:4px;top:4px;border:0;border-radius:50%;width:27px;height:27px;background:#ffffffed;color:#9aabbc;font-size:17px;line-height:1;display:none;padding:0}
-.tile.isAdmin .star{display:block}
+.tile.admin .star{display:block}
+.grid.reorderActive .star{display:none}
 .tile.priority .star{color:#f0ad00}
 .tile.reorderSelected{border-color:#55bce9;box-shadow:0 0 0 3px #a9e8ff,0 4px 12px #65c5ef55;transform:scale(.98)}
 .reorderPad{position:fixed;z-index:20;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:190px;padding:9px 12px 11px;border:1px solid #bfe5ff;border-radius:18px;background:#ffffffef;box-shadow:0 4px 18px #4776a544;backdrop-filter:blur(8px);display:none;text-align:center}
@@ -140,8 +141,9 @@ function render(){
  grid.innerHTML='';
  if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}
  files.forEach(path=>{
-  const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin&&reorderMode?' isAdmin':'')+(reorderTarget===path?' reorderSelected':'');box.dataset.path=path;
+  const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin?' admin':'')+(reorderTarget===path?' reorderSelected':'');box.dataset.path=path;
   const img=document.createElement('img');img.loading='lazy';img.alt='';img.dataset.path=path;box.appendChild(img);if(imageObserver)imageObserver.observe(img);else loadOneImage(path,img);
+  if(isAdmin&&!reorderMode){const star=document.createElement('button');star.type='button';star.className='star';star.textContent=priority.includes(path)?'★':'☆';star.setAttribute('aria-label',priority.includes(path)?'最優先を解除':'最優先にする');star.onclick=e=>{e.stopPropagation();priority=priority.includes(path)?priority.filter(p=>p!==path):[...priority,path];render();markDirty()};box.appendChild(star);}
   if(!(isAdmin&&reorderMode)){const pick=document.createElement('label');pick.className='pick';const check=document.createElement('input');check.type='checkbox';check.dataset.path=path;check.checked=selected.has(path);check.onchange=()=>{if(check.checked)selected.add(path);else selected.delete(path);updateSelectionUI()};pick.append(check,document.createTextNode('選択'));box.appendChild(pick);}
   if(isAdmin&&reorderMode){box.onclick=()=>{reorderTarget=path;render()}}
   grid.appendChild(box);
