@@ -23,7 +23,8 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .viewerTools button{background:var(--blue);color:white;border:0}.viewerTools button:disabled{opacity:.45}
 #listPreview{max-width:1000px;margin:0 auto 22px;padding:0 12px;display:grid;gap:14px}
 .previewPage{background:#fff;border:1px solid #dceeff;border-radius:14px;padding:12px;box-shadow:0 3px 12px #6da7d51a}
-.previewPage img{display:block;width:100%;height:auto;border-radius:8px}
+.previewPage img{display:block;width:100%;height:auto;border-radius:8px;-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto;touch-action:pan-y}
+.previewHint{text-align:center;color:#7290ad;font-size:12px;font-weight:700;margin:2px 0 10px}
 .previewActions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:9px;font-size:12px;color:var(--deep);font-weight:700}
 .previewActions a{display:inline-block;background:var(--blue);color:#fff;text-decoration:none;border-radius:10px;padding:9px 13px}
 .pick{position:absolute;left:5px;bottom:5px;z-index:2;background:#ffffffed;border-radius:8px;padding:4px 6px;font-size:11px;font-weight:700;color:var(--deep);display:flex;align-items:center;gap:3px}.pick input{width:16px;height:16px;margin:0;accent-color:var(--blue)}
@@ -182,11 +183,12 @@ async function makeOfferList(){
    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
    if(!blob)throw new Error('PNG conversion failed');
    const url=URL.createObjectURL(blob),wrap=document.createElement('div');wrap.className='previewPage';
-   const preview=document.createElement('img');preview.src=url;preview.alt='お譲り可能リスト '+(page+1)+'ページ';
+   const hint=document.createElement('p');hint.className='previewHint';hint.textContent='画像を長押しで保存可能です';
+   const preview=document.createElement('img');preview.src=url;preview.alt='お譲り可能リスト '+(page+1)+'ページ';preview.draggable=true;
    const actions=document.createElement('div');actions.className='previewActions';
    const label=document.createElement('span');label.textContent=(page+1)+' / '+totalPages+'ページ（'+pagePaths.length+'枚）';
    const link=document.createElement('a');link.href=url;link.download='aikatsu-offer-list-'+(page+1)+'.png';link.textContent='この画像を保存';
-   actions.append(label,link);wrap.append(preview,actions);listPreview.appendChild(wrap);
+   actions.append(label,link);wrap.append(hint,preview,actions);listPreview.appendChild(wrap);
   }
   listPreview.scrollIntoView({behavior:'smooth',block:'start'});
  }catch(e){console.error(e);alert('画像の作成に失敗しました。もう一度お試しください')}
