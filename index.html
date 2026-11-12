@@ -15,11 +15,22 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:0 8px 12px;max-width:1000px;margin:auto}
 .tab{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:13px;padding:11px 2px;font-size:12px;font-weight:700;box-shadow:0 2px 7px #8abcf022;white-space:nowrap}
 .tab.active{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent}
-.toolbar{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center}
+.toolbar{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .count{font-size:13px;font-weight:700;color:var(--deep)}
+.auth{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.auth button,.save{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700}
+.authStatus{font-size:11px;color:#7893ad}
+.save{background:var(--blue);color:white;border:0}
 .grid{max-width:1100px;margin:auto;padding:0 8px 30px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-.tile{border:2px solid #dceeff;border-radius:10px;background:#fff;padding:3px;overflow:hidden;box-shadow:0 2px 6px #6da7d51a;aspect-ratio:.72;display:flex;align-items:center;justify-content:center}
-.tile img{width:100%;height:100%;object-fit:contain;display:block}
+.tile{position:relative;border:2px solid #dceeff;border-radius:10px;background:#fff;padding:3px;overflow:hidden;box-shadow:0 2px 6px #6da7d51a;aspect-ratio:.72;display:flex;align-items:center;justify-content:center}
+.tile img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+.tile.priority{border-color:#f3c95b;box-shadow:0 0 0 2px #ffe8a4}
+.star{position:absolute;right:4px;top:4px;border:0;border-radius:50%;width:27px;height:27px;background:#ffffffed;color:#9aabbc;font-size:17px;line-height:1;display:none;padding:0}
+.tile.isAdmin .star{display:block}
+.tile.priority .star{color:#f0ad00}
+.drag{position:absolute;left:4px;top:4px;border:0;border-radius:7px;background:#ffffffed;color:var(--deep);font-size:15px;width:27px;height:27px;display:none;padding:0;touch-action:none}
+.tile.isAdmin .drag{display:block}
+.tile.dragging{opacity:.35}
 .empty{grid-column:1/-1;text-align:center;color:#91a8bf;padding:40px 10px;font-size:14px}
 .foot{text-align:center;color:#9ab0c5;font-size:11px;padding:0 10px 25px}
 @media(max-width:380px){.grid{gap:5px;padding-left:5px;padding-right:5px}.tile{padding:2px;border-radius:7px}.tab{font-size:10px;padding-left:0;padding-right:0;border-radius:10px}}
@@ -29,17 +40,98 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 <body>
 <header><h1>アイカツ！求めリスト</h1><div class="sub">シリーズを選んで画像をチェック ✧</div></header>
 <nav class="tabs" id="tabs"></nav>
-<div class="toolbar"><div class="count" id="count">画像を読み込み中…</div></div>
+<div class="toolbar">
+  <div class="count" id="count">画像を読み込み中…</div>
+  <div class="auth">
+    <span class="authStatus" id="authStatus">閲覧モード</span>
+    <button id="loginButton" type="button">管理者ログイン</button>
+    <button id="logoutButton" type="button" hidden>ログアウト</button>
+    <button class="save" id="saveButton" type="button" hidden>並び順を保存</button>
+  </div>
+</div>
 <main class="grid" id="grid"></main>
 <div class="foot">画像一覧専用ページ</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const SERIES=['初代','スターズ','フレンズ','オンパレード','プロモーション'];
-let current='初代', imageUrls={};
+const ADMIN_EMAIL='dakki0918@gmail.com';
+const firebaseConfig={apiKey:"AIzaSyBJv3OxAeIHluwUWeqo5b2gqcZpyE3RVl4",authDomain:"aikatsu-stars-card-checker.firebaseapp.com",projectId:"aikatsu-stars-card-checker",storageBucket:"aikatsu-stars-card-checker.firebasestorage.app",messagingSenderId:"824065060047",appId:"1:824065060047:web:c1d470456783a582595bba"};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),db=firebase.firestore();
+let current='初代',imageUrls={},orders={},priority=[],currentUser=null,isAdmin=false,dirty=false,dragged=null;
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
+const authStatus=document.getElementById('authStatus'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
+const stateRef=db.collection('tradeGallery').doc('main');
+function seriesFiles(s){return Object.keys(imageUrls).filter(p=>p.startsWith('images/'+s+'/'))}
+function orderedFiles(s){
+ const files=seriesFiles(s),saved=orders[s]||[],valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+ return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
+}
+function markDirty(){dirty=true;saveButton.hidden=!isAdmin;authStatus.textContent='未保存の変更あり'}
 function renderTabs(){tabs.innerHTML='';SERIES.forEach(s=>{const b=document.createElement('button');b.className='tab'+(s===current?' active':'');b.textContent=s;b.onclick=()=>{current=s;renderTabs();render()};tabs.appendChild(b)})}
-function render(){const files=Object.keys(imageUrls).filter(k=>k.startsWith('images/'+current+'/')).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));count.textContent=current+'　'+files.length+'枚';grid.innerHTML='';if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}files.forEach(path=>{const box=document.createElement('div');box.className='tile';const img=document.createElement('img');img.loading='lazy';img.alt='';img.src=imageUrls[path];box.appendChild(img);grid.appendChild(box)})}
-async function loadImages(){try{const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');const zip=await JSZip.loadAsync(await response.arrayBuffer());const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));for(const path of entries){const blob=await zip.files[path].async('blob');imageUrls[path]=URL.createObjectURL(blob)}renderTabs();render()}catch(e){console.error(e);count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}}
+function render(){
+ const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':'');
+ grid.innerHTML='';
+ if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}
+ files.forEach(path=>{
+  const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin?' isAdmin':'');box.dataset.path=path;
+  const img=document.createElement('img');img.loading='lazy';img.alt='';img.src=imageUrls[path];box.appendChild(img);
+  if(isAdmin){
+   const star=document.createElement('button');star.className='star';star.type='button';star.textContent=priority.includes(path)?'★':'☆';star.title='最優先に設定';
+   star.onclick=()=>{if(priority.includes(path))priority=priority.filter(x=>x!==path);else priority.push(path);markDirty();render()};
+   const handle=document.createElement('button');handle.className='drag';handle.type='button';handle.textContent='↕';handle.title='長押しして並べ替え';
+   handle.addEventListener('pointerdown',e=>{e.preventDefault();dragged=box;box.classList.add('dragging');handle.setPointerCapture(e.pointerId)});
+   handle.addEventListener('pointermove',e=>{if(!dragged)return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.tile');if(target&&target!==dragged&&target.parentElement===grid){const r=target.getBoundingClientRect();grid.insertBefore(dragged,e.clientY<r.top+r.height/2?target:target.nextSibling)}});
+   const finish=()=>{if(!dragged)return;dragged.classList.remove('dragging');dragged=null;orders[current]=[...grid.querySelectorAll('.tile')].map(el=>el.dataset.path);markDirty()};
+   handle.addEventListener('pointerup',finish);handle.addEventListener('pointercancel',finish);
+   box.append(star,handle);
+  }
+  grid.appendChild(box);
+ });
+}
+async function loadGalleryState(){
+ try{
+  const snap=await stateRef.get();
+  if(snap.exists){const data=snap.data()||{};orders=data.orders||{};priority=Array.isArray(data.priority)?data.priority:[]}
+ }catch(e){console.warn('Gallery settings could not be read',e);authStatus.textContent='並び順の読み込み待ち'}
+}
+async function saveGalleryState(){
+ if(!isAdmin)return;
+ orders[current]=[...grid.querySelectorAll('.tile')].map(el=>el.dataset.path);
+ const allOrders={...orders};
+ for(const s of SERIES){const files=seriesFiles(s),saved=allOrders[s]||[];allOrders[s]=[...saved.filter(p=>files.includes(p)),...files.filter(p=>!saved.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}))]}
+ try{
+  await stateRef.set({orders:allOrders,priority:priority.filter(p=>Object.prototype.hasOwnProperty.call(imageUrls,p)),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  orders=allOrders;dirty=false;saveButton.hidden=true;authStatus.textContent='保存しました';render();
+ }catch(e){console.error(e);authStatus.textContent='保存できません（Firestoreルールを確認）'}
+}
+saveButton.onclick=saveGalleryState;
+loginButton.onclick=async()=>{
+ loginButton.disabled=true;authStatus.textContent='ログイン中…';
+ try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())}
+ catch(e){if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());return}catch(er){e=er}}authStatus.textContent='ログイン失敗：'+(e.message||e.code)}
+ finally{loginButton.disabled=false}
+};
+logoutButton.onclick=()=>auth.signOut();
+auth.getRedirectResult().catch(e=>{authStatus.textContent='ログイン失敗：'+(e.message||e.code)});
+auth.onAuthStateChanged(user=>{
+ currentUser=user;isAdmin=!!user&&String(user.email||'').toLowerCase()===ADMIN_EMAIL;
+ loginButton.hidden=isAdmin;logoutButton.hidden=!isAdmin;
+ authStatus.textContent=isAdmin?'管理者モード':user?'閲覧モード（編集権限なし）':'閲覧モード';
+ saveButton.hidden=!(isAdmin&&dirty);render();
+});
+async function loadImages(){
+ try{
+  const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');
+  const zip=await JSZip.loadAsync(await response.arrayBuffer());
+  const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));
+  for(const path of entries){const blob=await zip.files[path].async('blob');imageUrls[path]=URL.createObjectURL(blob)}
+  await loadGalleryState();renderTabs();render();
+ }catch(e){console.error(e);count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}
+}
 loadImages();
 </script>
 </body>
