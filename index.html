@@ -90,7 +90,11 @@ function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択�
 async function loadOneImage(path,img){if(imageUrls[path]){img.src=imageUrls[path];return}if(!loadingImages[path]){loadingImages[path]=imageEntries[path].async('blob').then(blob=>{imageUrls[path]=URL.createObjectURL(blob);return imageUrls[path]}).finally(()=>delete loadingImages[path])}try{const url=await loadingImages[path];if(img.isConnected)img.src=url}catch(e){img.alt='画像を読み込めません'}}
 const imageObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){const img=entry.target;imageObserver.unobserve(img);loadOneImage(img.dataset.path,img)}}),{rootMargin:'250px'}):null;
 function orderedFiles(s){
- if(s==='最優先')return orderedFiles('すべて').filter(p=>priority.includes(p));
+ if(s==='最優先'){
+  const files=orderedFiles('すべて').filter(p=>priority.includes(p)),saved=orders['最優先']||[];
+  const valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p));
+  return [...valid,...added];
+ }
  if(s==='すべて'){
   const files=SERIES.flatMap(name=>orderedFiles(name)),saved=orders['すべて']||[];
   const valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p));
