@@ -52,6 +52,15 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .star{position:absolute;right:4px;top:4px;border:0;border-radius:50%;width:27px;height:27px;background:#ffffffed;color:#9aabbc;font-size:17px;line-height:1;display:none;padding:0}
 .tile.isAdmin .star{display:block}
 .tile.priority .star{color:#f0ad00}
+.tile.reorderSelected{border-color:#55bce9;box-shadow:0 0 0 3px #a9e8ff,0 4px 12px #65c5ef55;transform:scale(.98)}
+.reorderPad{position:fixed;z-index:20;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:190px;padding:9px 12px 11px;border:1px solid #bfe5ff;border-radius:18px;background:#ffffffef;box-shadow:0 4px 18px #4776a544;backdrop-filter:blur(8px);display:none;text-align:center}
+.reorderPad.visible{display:block}
+.reorderPadLabel{font-size:11px;font-weight:800;color:var(--deep);margin-bottom:7px;white-space:nowrap}
+.directionPad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,42px);justify-content:center;gap:5px}
+.directionPad button{border:1px solid #b8def8;border-radius:12px;background:linear-gradient(180deg,#f5fbff,#dff2ff);color:#4a9bd0;font-size:23px;font-weight:900;line-height:1;box-shadow:0 2px 3px #75bce533;touch-action:manipulation}
+.directionPad button:active:not(:disabled){background:#c6eaff;transform:translateY(1px)}
+.directionPad button:disabled{opacity:.3}
+.grid.reorderActive{padding-bottom:145px}
 .orderControls{position:absolute;left:3px;right:3px;bottom:3px;display:none;grid-template-columns:repeat(2,1fr);gap:3px;padding:3px;border-radius:8px;background:#ffffffed;box-shadow:0 1px 5px #4776a533}
 .tile.isAdmin .orderControls{display:grid}
 .orderControls button{border:0;border-radius:6px;background:#e8f3ff;color:var(--deep);font-size:14px;font-weight:700;min-width:0;height:27px;padding:0;touch-action:manipulation}
@@ -84,7 +93,7 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 </section>
 <div class="viewerTools"><span id="selectedCount">0枚選択中</span><button id="makeListButton" type="button" disabled>お譲り可能リストを画像化</button></div>
 <section id="listPreview" aria-live="polite"></section>
-<main class="grid" id="grid"></main>
+<main class="grid" id="grid"></main>\n<section class="reorderPad" id="reorderPad" aria-label="カード移動コントローラー"><div class="reorderPadLabel" id="reorderPadLabel">カードをタップして選択</div><div class="directionPad"><button type="button" data-direction="up" aria-label="上へ">↑</button><button type="button" data-direction="left" aria-label="左へ">←</button><button type="button" data-direction="down" aria-label="下へ">↓</button><button type="button" data-direction="right" aria-label="右へ">→</button></div></section>
 <div class="foot">画像一覧専用ページ</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -96,9 +105,9 @@ const ADMIN_EMAIL='dakki0918@gmail.com';
 const firebaseConfig={apiKey:"AIzaSyBJv3OxAeIHluwUWeqo5b2gqcZpyE3RVl4",authDomain:"aikatsu-stars-card-checker.firebaseapp.com",projectId:"aikatsu-stars-card-checker",storageBucket:"aikatsu-stars-card-checker.firebasestorage.app",messagingSenderId:"824065060047",appId:"1:824065060047:web:c1d470456783a582595bba"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
-let current='すべて',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,reorderMode=false,dirty=false,dragged=null;
+let current='すべて',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,reorderMode=false,dirty=false,reorderTarget=null;
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
-const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),settingsButton=document.getElementById('settingsButton'),settingsPanel=document.getElementById('settingsPanel'),reorderButton=document.getElementById('reorderButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
+const reorderPad=document.getElementById('reorderPad'),reorderPadLabel=document.getElementById('reorderPadLabel');\nconst authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),settingsButton=document.getElementById('settingsButton'),settingsPanel=document.getElementById('settingsPanel'),reorderButton=document.getElementById('reorderButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
 const stateRef=db.collection('tradeGallery').doc('main');
 function seriesFiles(s){return Object.keys(imageEntries).filter(p=>s==='すべて'?p.startsWith('images/'):p.startsWith('images/'+s+'/'))}
 function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択中';makeListButton.disabled=!selected.size}
@@ -119,22 +128,16 @@ function orderedFiles(s){
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
 }
 function markDirty(){dirty=true;saveButton.hidden=!isAdmin;authStatus.textContent='未保存の変更あり'}
-function renderTabs(){tabs.innerHTML='';const select=document.createElement('select');select.setAttribute('aria-label','シリーズを選択');[['すべて','すべて'],['最優先','★ 最優先'],...SERIES.map(s=>[s,s])].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option)});select.value=current;select.onchange=()=>{current=select.value;render()};tabs.appendChild(select)}
+function renderTabs(){tabs.innerHTML='';const select=document.createElement('select');select.setAttribute('aria-label','シリーズを選択');[['すべて','すべて'],['最優先','★ 最優先'],...SERIES.map(s=>[s,s])].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option)});select.value=current;select.onchange=()=>{current=select.value;reorderTarget=null;render()};tabs.appendChild(select)}
 function render(){
- const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(current==='すべて'||current==='最優先'?'':(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':''));
+ const files=orderedFiles(current);grid.classList.toggle('reorderActive',isAdmin&&reorderMode);reorderPad.classList.toggle('visible',isAdmin&&reorderMode);count.textContent=current+'　'+files.length+'枚'+(current==='すべて'||current==='最優先'?'':(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':''));
  grid.innerHTML='';
  if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}
  files.forEach(path=>{
-  const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin&&reorderMode?' isAdmin':'');box.dataset.path=path;
+  const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin&&reorderMode?' isAdmin':'')+(reorderTarget===path?' reorderSelected':'');box.dataset.path=path;
   const img=document.createElement('img');img.loading='lazy';img.alt='';img.dataset.path=path;box.appendChild(img);if(imageObserver)imageObserver.observe(img);else loadOneImage(path,img);
   if(!(isAdmin&&reorderMode)){const pick=document.createElement('label');pick.className='pick';const check=document.createElement('input');check.type='checkbox';check.dataset.path=path;check.checked=selected.has(path);check.onchange=()=>{if(check.checked)selected.add(path);else selected.delete(path);updateSelectionUI()};pick.append(check,document.createTextNode('選択'));box.appendChild(pick);}
-  if(isAdmin&&reorderMode){
-   const controls=document.createElement('div');controls.className='orderControls';
-   const move=(from,to)=>{const list=[...grid.querySelectorAll('.tile')].map(el=>el.dataset.path);if(to<0||to>=list.length||from===to)return;const item=list.splice(from,1)[0];list.splice(to,0,item);orders[current]=list;render();markDirty()};
-   const index=files.indexOf(path);
-   [['↑',index-1,'上へ'],['↓',index+1,'下へ']].forEach(([label,to,title])=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.title=title;button.setAttribute('aria-label',title);button.disabled=(to===index)||(label==='↑'&&index===0)||(label==='↓'&&index===files.length-1);button.onclick=()=>move(index,to);controls.appendChild(button)});
-   box.appendChild(controls);
-  }
+  if(isAdmin&&reorderMode){box.onclick=()=>{reorderTarget=path;render()}}
   grid.appendChild(box);
  });
  updateSelectionUI();
@@ -159,7 +162,7 @@ async function saveGalleryState(){
 }
 saveButton.onclick=saveGalleryState;
 settingsButton.onclick=()=>{settingsPanel.hidden=!settingsPanel.hidden;settingsButton.setAttribute('aria-expanded',String(!settingsPanel.hidden))};
-reorderButton.onclick=()=>{if(!isAdmin)return;reorderMode=!reorderMode;reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';render()};
+reorderButton.onclick=()=>{if(!isAdmin)return;reorderMode=!reorderMode;reorderTarget=null;reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';render()};
 loginButton.onclick=async()=>{
  loginButton.disabled=true;authStatus.textContent='ログイン中…';
  try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())}
@@ -171,7 +174,7 @@ auth.getRedirectResult().catch(e=>{authStatus.textContent='ログイン失敗：
 auth.onAuthStateChanged(user=>{
  currentUser=user;isAdmin=!!user&&String(user.email||'').toLowerCase()===ADMIN_EMAIL;
  loginButton.hidden=isAdmin;logoutButton.hidden=!isAdmin;reorderButton.disabled=!isAdmin;
- if(!isAdmin)reorderMode=false;
+ if(!isAdmin){reorderMode=false;reorderTarget=null;}
  reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';
  authStatus.textContent=isAdmin?'管理者ログイン中':user?'閲覧モード（編集権限なし）':'未ログイン';
  saveButton.hidden=!(isAdmin&&dirty);render();
