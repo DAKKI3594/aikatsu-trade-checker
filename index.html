@@ -18,6 +18,14 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .sub{font-size:12px;color:#7290ad}
 .tabs{padding:0 12px 12px;max-width:1000px;margin:auto}
 .tabs select{width:100%;border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:13px;padding:13px 14px;font-size:15px;font-weight:700;box-shadow:0 2px 7px #8abcf022;}
+.toolbarActions{display:flex;align-items:center;gap:8px}
+.settingsButton{width:40px;height:40px;border:1px solid #dceaff;border-radius:12px;background:#fff;font-size:21px}
+.settingsPanel{margin:0 12px 12px;padding:13px;border:1px solid #dceaff;border-radius:13px;background:#f8fbff}
+.settingsHeading{font-weight:800;color:var(--deep);margin-bottom:8px}
+.settingsRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #e5effa;font-size:13px}
+.settingsRow button,.settingsPanel>.save{border:1px solid #cfe2f8;border-radius:8px;background:#fff;color:var(--deep);padding:8px 11px;font-weight:700}
+.settingsPanel button:disabled{opacity:.5}
+.settingsPanel>.save{margin-top:8px;background:#e8f3ff}
 .toolbar{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .count{font-size:13px;font-weight:700;color:var(--deep)}
 .auth{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -61,14 +69,15 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 <nav class="tabs" id="tabs"></nav>
 <div class="toolbar">
   <div class="count" id="count">画像を読み込み中…</div>
-  <div class="auth">
-    <button id="refreshButton" type="button">↻ 最新状態に更新</button>
-    <span class="authStatus" id="authStatus">閲覧モード</span>
-    <button id="loginButton" type="button">管理者ログイン</button>
-    <button id="logoutButton" type="button" hidden>ログアウト</button>
-    <button class="save" id="saveButton" type="button" hidden>並び順を保存</button>
-  </div>
+  <div class="toolbarActions"><button id="refreshButton" type="button">↻ 最新状態に更新</button><button id="settingsButton" class="settingsButton" type="button" aria-label="設定" aria-expanded="false">⚙️</button></div>
 </div>
+<section class="settingsPanel" id="settingsPanel" hidden>
+  <div class="settingsHeading">⚙️ 設定</div>
+  <div class="settingsRow"><span>ログイン状態</span><span class="authStatus" id="authStatus">閲覧モード</span></div>
+  <div class="settingsRow"><span>管理者ログイン</span><div><button id="loginButton" type="button">ログイン</button><button id="logoutButton" type="button" hidden>ログアウト</button></div></div>
+  <div class="settingsRow"><span>並び替え</span><button id="reorderButton" type="button" disabled>管理者ログイン後に利用できます</button></div>
+  <button class="save" id="saveButton" type="button" hidden>並び順を保存</button>
+</section>
 <div class="viewerTools"><span id="selectedCount">0枚選択中</span><button id="makeListButton" type="button" disabled>お譲り可能リストを画像化</button></div>
 <section id="listPreview" aria-live="polite"></section>
 <main class="grid" id="grid"></main>
@@ -83,9 +92,9 @@ const ADMIN_EMAIL='dakki0918@gmail.com';
 const firebaseConfig={apiKey:"AIzaSyBJv3OxAeIHluwUWeqo5b2gqcZpyE3RVl4",authDomain:"aikatsu-stars-card-checker.firebaseapp.com",projectId:"aikatsu-stars-card-checker",storageBucket:"aikatsu-stars-card-checker.firebasestorage.app",messagingSenderId:"824065060047",appId:"1:824065060047:web:c1d470456783a582595bba"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
-let current='すべて',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,dirty=false,dragged=null;
+let current='すべて',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,reorderMode=false,dirty=false,dragged=null;
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
-const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
+const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),settingsButton=document.getElementById('settingsButton'),settingsPanel=document.getElementById('settingsPanel'),reorderButton=document.getElementById('reorderButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
 const stateRef=db.collection('tradeGallery').doc('main');
 function seriesFiles(s){return Object.keys(imageEntries).filter(p=>s==='すべて'?p.startsWith('images/'):p.startsWith('images/'+s+'/'))}
 function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択中';makeListButton.disabled=!selected.size}
@@ -105,17 +114,17 @@ function orderedFiles(s){
  const files=seriesFiles(s),saved=orders[s]||[],valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
 }
-function markDirty(){dirty=true;saveButton.hidden=!isAdmin;authStatus.textContent='未保存の変更あり'}
+function markDirty(){dirty=true;saveButton.hidden=!(isAdmin&&reorderMode);authStatus.textContent='未保存の変更あり'}
 function renderTabs(){tabs.innerHTML='';const select=document.createElement('select');select.setAttribute('aria-label','シリーズを選択');[['すべて','すべて'],['最優先','★ 最優先'],...SERIES.map(s=>[s,s])].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option)});select.value=current;select.onchange=()=>{current=select.value;render()};tabs.appendChild(select)}
 function render(){
  const files=orderedFiles(current);count.textContent=current+'　'+files.length+'枚'+(current==='すべて'||current==='最優先'?'':(priority.filter(p=>p.startsWith('images/'+current+'/')).length?'　⭐最優先 '+priority.filter(p=>p.startsWith('images/'+current+'/')).length+'枚':''));
  grid.innerHTML='';
  if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}
  files.forEach(path=>{
-  const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin?' isAdmin':'');box.dataset.path=path;
+  const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin&&reorderMode?' isAdmin':'');box.dataset.path=path;
   const img=document.createElement('img');img.loading='lazy';img.alt='';img.dataset.path=path;box.appendChild(img);if(imageObserver)imageObserver.observe(img);else loadOneImage(path,img);
   const pick=document.createElement('label');pick.className='pick';const check=document.createElement('input');check.type='checkbox';check.dataset.path=path;check.checked=selected.has(path);check.onchange=()=>{if(check.checked)selected.add(path);else selected.delete(path);updateSelectionUI()};pick.append(check,document.createTextNode('選択'));box.appendChild(pick);
-  if(isAdmin){
+  if(isAdmin&&reorderMode){
    const star=document.createElement('button');star.className='star';star.type='button';star.textContent=priority.includes(path)?'★':'☆';star.title='最優先に設定';
    star.onclick=()=>{if(priority.includes(path))priority=priority.filter(x=>x!==path);else priority.push(path);markDirty();render()};
    const controls=document.createElement('div');controls.className='orderControls';
@@ -147,6 +156,8 @@ async function saveGalleryState(){
  }catch(e){console.error(e);authStatus.textContent='保存できません（Firestoreルールを確認）'}
 }
 saveButton.onclick=saveGalleryState;
+settingsButton.onclick=()=>{settingsPanel.hidden=!settingsPanel.hidden;settingsButton.setAttribute('aria-expanded',String(!settingsPanel.hidden))};
+reorderButton.onclick=()=>{if(!isAdmin)return;reorderMode=!reorderMode;reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';render()};
 loginButton.onclick=async()=>{
  loginButton.disabled=true;authStatus.textContent='ログイン中…';
  try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())}
@@ -157,9 +168,11 @@ logoutButton.onclick=()=>auth.signOut();
 auth.getRedirectResult().catch(e=>{authStatus.textContent='ログイン失敗：'+(e.message||e.code)});
 auth.onAuthStateChanged(user=>{
  currentUser=user;isAdmin=!!user&&String(user.email||'').toLowerCase()===ADMIN_EMAIL;
- loginButton.hidden=isAdmin;logoutButton.hidden=!isAdmin;
- authStatus.textContent=isAdmin?'管理者モード':user?'閲覧モード（編集権限なし）':'閲覧モード';
- saveButton.hidden=!(isAdmin&&dirty);render();
+ loginButton.hidden=isAdmin;logoutButton.hidden=!isAdmin;reorderButton.disabled=!isAdmin;
+ if(!isAdmin)reorderMode=false;
+ reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';
+ authStatus.textContent=isAdmin?'管理者ログイン中':user?'閲覧モード（編集権限なし）':'未ログイン';
+ saveButton.hidden=!(isAdmin&&reorderMode&&dirty);render();
 });
 async function loadImages(){
  try{
