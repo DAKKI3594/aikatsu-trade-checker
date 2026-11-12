@@ -76,7 +76,7 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-const SERIES=['初代','スターズ','フレンズ','オンパレード','プロモーション'];
+const SERIES=['初代','スターズ','フレンズ','オンパレード','アンコール','プロモーション'];
 const ADMIN_EMAIL='dakki0918@gmail.com';
 const firebaseConfig={apiKey:"AIzaSyBJv3OxAeIHluwUWeqo5b2gqcZpyE3RVl4",authDomain:"aikatsu-stars-card-checker.firebaseapp.com",projectId:"aikatsu-stars-card-checker",storageBucket:"aikatsu-stars-card-checker.firebasestorage.app",messagingSenderId:"824065060047",appId:"1:824065060047:web:c1d470456783a582595bba"};
 firebase.initializeApp(firebaseConfig);
@@ -152,9 +152,16 @@ auth.onAuthStateChanged(user=>{
 async function loadImages(){
  try{
   const forceFresh=new URLSearchParams(location.search).has('refresh');const response=await fetch(forceFresh?'aikatsu-images.zip?v='+Date.now():'aikatsu-images.zip',forceFresh?{cache:'no-store'}:{});if(!response.ok)throw new Error('ZIP missing');
-  const zip=await JSZip.loadAsync(await response.arrayBuffer());
-  const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));
-  for(const path of entries){imageEntries[path.normalize('NFC')]=zip.files[path]}
+  const zip=await JSZip.loadAsync(await response.arrayBuffer(),{decodeFileName:bytes=>new TextDecoder('utf-8').decode(bytes)});
+  const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));
+  for(const originalPath of entries){
+   const parts=originalPath.normalize('NFC').split('/');
+   if(parts[0]==='aikatsu-images')parts.shift();
+   if(parts[0]==='images')parts.shift();
+   if(parts.length!==2||!SERIES.includes(parts[0]))continue;
+   const path='images/'+parts.join('/');
+   imageEntries[path]=zip.files[originalPath];
+  }
   await loadGalleryState();renderTabs();render();
  }catch(e){console.error(e);count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}
 }
