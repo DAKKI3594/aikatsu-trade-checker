@@ -18,7 +18,10 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 .toolbar{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .count{font-size:13px;font-weight:700;color:var(--deep)}
 .auth{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.auth button,.save{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700}
+.auth button,.save,.viewerTools button{border:1px solid #c8e3ff;background:#fff;color:var(--deep);border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700}
+.viewerTools{max-width:1000px;margin:0 auto 12px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;color:var(--deep)}
+.viewerTools button{background:var(--blue);color:white;border:0}.viewerTools button:disabled{opacity:.45}
+.pick{position:absolute;left:5px;bottom:5px;z-index:2;background:#ffffffed;border-radius:8px;padding:4px 6px;font-size:11px;font-weight:700;color:var(--deep);display:flex;align-items:center;gap:3px}.pick input{width:16px;height:16px;margin:0;accent-color:var(--blue)}
 .authStatus{font-size:11px;color:#7893ad}
 .save{background:var(--blue);color:white;border:0}
 .grid{max-width:1100px;margin:auto;padding:0 8px 30px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
@@ -43,12 +46,14 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
 <div class="toolbar">
   <div class="count" id="count">画像を読み込み中…</div>
   <div class="auth">
+    <button id="refreshButton" type="button">↻ 最新状態に更新</button>
     <span class="authStatus" id="authStatus">閲覧モード</span>
     <button id="loginButton" type="button">管理者ログイン</button>
     <button id="logoutButton" type="button" hidden>ログアウト</button>
     <button class="save" id="saveButton" type="button" hidden>並び順を保存</button>
   </div>
 </div>
+<div class="viewerTools"><span id="selectedCount">0枚選択中</span><button id="makeListButton" type="button" disabled>選択画像でお譲りリストを作成</button></div>
 <main class="grid" id="grid"></main>
 <div class="foot">画像一覧専用ページ</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -61,11 +66,14 @@ const ADMIN_EMAIL='dakki0918@gmail.com';
 const firebaseConfig={apiKey:"AIzaSyBJv3OxAeIHluwUWeqo5b2gqcZpyE3RVl4",authDomain:"aikatsu-stars-card-checker.firebaseapp.com",projectId:"aikatsu-stars-card-checker",storageBucket:"aikatsu-stars-card-checker.firebasestorage.app",messagingSenderId:"824065060047",appId:"1:824065060047:web:c1d470456783a582595bba"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
-let current='初代',imageUrls={},orders={},priority=[],currentUser=null,isAdmin=false,dirty=false,dragged=null;
+let current='初代',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,dirty=false,dragged=null;
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
-const authStatus=document.getElementById('authStatus'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
+const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
 const stateRef=db.collection('tradeGallery').doc('main');
-function seriesFiles(s){return Object.keys(imageUrls).filter(p=>p.startsWith('images/'+s+'/'))}
+function seriesFiles(s){return Object.keys(imageEntries).filter(p=>p.startsWith('images/'+s+'/'))}
+function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択中';makeListButton.disabled=!selected.size}
+async function loadOneImage(path,img){if(imageUrls[path]){img.src=imageUrls[path];return}if(!loadingImages[path]){loadingImages[path]=imageEntries[path].async('blob').then(blob=>{imageUrls[path]=URL.createObjectURL(blob);return imageUrls[path]}).finally(()=>delete loadingImages[path])}try{const url=await loadingImages[path];if(img.isConnected)img.src=url}catch(e){img.alt='画像を読み込めません'}}
+const imageObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){const img=entry.target;imageObserver.unobserve(img);loadOneImage(img.dataset.path,img)}}),{rootMargin:'250px'}):null;
 function orderedFiles(s){
  const files=seriesFiles(s),saved=orders[s]||[],valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
@@ -78,7 +86,8 @@ function render(){
  if(!files.length){grid.innerHTML='<div class="empty">このシリーズの画像がありません</div>';return}
  files.forEach(path=>{
   const box=document.createElement('div');box.className='tile'+(priority.includes(path)?' priority':'')+(isAdmin?' isAdmin':'');box.dataset.path=path;
-  const img=document.createElement('img');img.loading='lazy';img.alt='';img.src=imageUrls[path];box.appendChild(img);
+  const img=document.createElement('img');img.loading='lazy';img.alt='';img.dataset.path=path;box.appendChild(img);if(imageObserver)imageObserver.observe(img);else loadOneImage(path,img);
+  const pick=document.createElement('label');pick.className='pick';const check=document.createElement('input');check.type='checkbox';check.dataset.path=path;check.checked=selected.has(path);check.onchange=()=>{if(check.checked)selected.add(path);else selected.delete(path);updateSelectionUI()};pick.append(check,document.createTextNode('選択'));box.appendChild(pick);
   if(isAdmin){
    const star=document.createElement('button');star.className='star';star.type='button';star.textContent=priority.includes(path)?'★':'☆';star.title='最優先に設定';
    star.onclick=()=>{if(priority.includes(path))priority=priority.filter(x=>x!==path);else priority.push(path);markDirty();render()};
@@ -91,6 +100,7 @@ function render(){
   }
   grid.appendChild(box);
  });
+ updateSelectionUI();
 }
 async function loadGalleryState(){
  try{
@@ -104,7 +114,7 @@ async function saveGalleryState(){
  const allOrders={...orders};
  for(const s of SERIES){const files=seriesFiles(s),saved=allOrders[s]||[];allOrders[s]=[...saved.filter(p=>files.includes(p)),...files.filter(p=>!saved.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}))]}
  try{
-  await stateRef.set({orders:allOrders,priority:priority.filter(p=>Object.prototype.hasOwnProperty.call(imageUrls,p)),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await stateRef.set({orders:allOrders,priority:priority.filter(p=>Object.prototype.hasOwnProperty.call(imageEntries,p)),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
   orders=allOrders;dirty=false;saveButton.hidden=true;authStatus.textContent='保存しました';render();
  }catch(e){console.error(e);authStatus.textContent='保存できません（Firestoreルールを確認）'}
 }
@@ -125,13 +135,44 @@ auth.onAuthStateChanged(user=>{
 });
 async function loadImages(){
  try{
-  const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');
+  const forceFresh=new URLSearchParams(location.search).has('refresh');const response=await fetch(forceFresh?'aikatsu-images.zip?v='+Date.now():'aikatsu-images.zip',forceFresh?{cache:'no-store'}:{});if(!response.ok)throw new Error('ZIP missing');
   const zip=await JSZip.loadAsync(await response.arrayBuffer());
   const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));
-  for(const path of entries){const blob=await zip.files[path].async('blob');const normalizedPath=path.normalize('NFC');imageUrls[normalizedPath]=URL.createObjectURL(blob)}
+  for(const path of entries){imageEntries[path.normalize('NFC')]=zip.files[path]}
   await loadGalleryState();renderTabs();render();
  }catch(e){console.error(e);count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}
 }
+refreshButton.onclick=()=>{refreshButton.disabled=true;refreshButton.textContent='更新中…';location.href=location.pathname+'?refresh='+Date.now()};
+async function makeOfferList(){
+ const paths=[...selected].filter(p=>imageEntries[p]);if(!paths.length)return;
+ makeListButton.disabled=true;makeListButton.textContent='画像を作成中…';
+ try{
+  const files=[],perPage=40,cols=5,cellW=220,cellH=310;
+  for(let page=0;page<Math.ceil(paths.length/perPage);page++){
+   const pagePaths=paths.slice(page*perPage,(page+1)*perPage),rows=Math.ceil(pagePaths.length/cols),canvas=document.createElement('canvas');
+   canvas.width=cols*cellW;canvas.height=130+rows*cellH+25;
+   const ctx=canvas.getContext('2d');ctx.fillStyle='#f3f9ff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   ctx.fillStyle='#3e6fb5';ctx.textAlign='center';ctx.font='bold 30px sans-serif';ctx.fillText('アイカツ！ お譲り可能リスト',canvas.width/2,48);
+   ctx.font='15px sans-serif';ctx.fillStyle='#7290ad';ctx.fillText(new Date().toLocaleDateString('ja-JP')+'　'+(page+1)+'/'+Math.ceil(paths.length/perPage),canvas.width/2,82);
+   for(let i=0;i<pagePaths.length;i++){
+    const path=pagePaths[i];let url=imageUrls[path];
+    if(!url){const blob=await imageEntries[path].async('blob');url=URL.createObjectURL(blob);imageUrls[path]=url}
+    const img=new Image();img.src=url;await img.decode();
+    const x=(i%cols)*cellW+10,y=105+Math.floor(i/cols)*cellH+8;
+    ctx.fillStyle='#fff';ctx.fillRect(x,y,cellW-20,cellH-16);
+    const scale=Math.min((cellW-36)/img.width,(cellH-55)/img.height),w=img.width*scale,h=img.height*scale;
+    ctx.drawImage(img,x+(cellW-20-w)/2,y+8+(cellH-60-h)/2,w,h);
+    ctx.fillStyle='#35516f';ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText(path.split('/').pop().replace(/\\.[^.]+$/,''),x+(cellW-20)/2,y+cellH-32);
+   }
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+   files.push(new File([blob],'aikatsu-offer-list-'+(page+1)+'.png',{type:'image/png'}));
+  }
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files})){await navigator.share({files,title:'アイカツ！お譲り可能リスト'})}
+  else{files.forEach(file=>{const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),30000)})}
+ }catch(e){console.error(e);alert('画像の作成に失敗しました。もう一度お試しください')}
+ finally{makeListButton.disabled=false;makeListButton.textContent='選択画像でお譲りリストを作成'}
+}
+makeListButton.onclick=makeOfferList;
 loadImages();
 </script>
 </body>
