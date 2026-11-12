@@ -72,7 +72,7 @@ const ADMIN_EMAIL='dakki0918@gmail.com';
 const firebaseConfig={apiKey:"AIzaSyBJv3OxAeIHluwUWeqo5b2gqcZpyE3RVl4",authDomain:"aikatsu-stars-card-checker.firebaseapp.com",projectId:"aikatsu-stars-card-checker",storageBucket:"aikatsu-stars-card-checker.firebasestorage.app",messagingSenderId:"824065060047",appId:"1:824065060047:web:c1d470456783a582595bba"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
-let current='初代',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,dirty=false,dragged=null;
+let current='すべて',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,dirty=false,dragged=null;
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
 const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
 const stateRef=db.collection('tradeGallery').doc('main');
@@ -81,6 +81,7 @@ function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択�
 async function loadOneImage(path,img){if(imageUrls[path]){img.src=imageUrls[path];return}if(!loadingImages[path]){loadingImages[path]=imageEntries[path].async('blob').then(blob=>{imageUrls[path]=URL.createObjectURL(blob);return imageUrls[path]}).finally(()=>delete loadingImages[path])}try{const url=await loadingImages[path];if(img.isConnected)img.src=url}catch(e){img.alt='画像を読み込めません'}}
 const imageObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){const img=entry.target;imageObserver.unobserve(img);loadOneImage(img.dataset.path,img)}}),{rootMargin:'250px'}):null;
 function orderedFiles(s){
+ if(s==='すべて')return SERIES.flatMap(name=>orderedFiles(name));
  const files=seriesFiles(s),saved=orders[s]||[],valid=saved.filter(p=>files.includes(p)),added=files.filter(p=>!valid.includes(p)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
  return [...valid,...added].sort((a,b)=>Number(priority.includes(b))-Number(priority.includes(a)) || (priority.includes(a)&&priority.includes(b)?(saved.indexOf(a)-saved.indexOf(b)):0));
 }
