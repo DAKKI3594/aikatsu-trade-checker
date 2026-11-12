@@ -128,7 +128,7 @@ async function loadImages(){
   const response=await fetch('aikatsu-images.zip');if(!response.ok)throw new Error('ZIP missing');
   const zip=await JSZip.loadAsync(await response.arrayBuffer());
   const entries=Object.keys(zip.files).filter(path=>!zip.files[path].dir&&path.startsWith('images/')&&!path.startsWith('__MACOSX/')&&!path.split('/').some(part=>part.startsWith('._')));
-  for(const path of entries){const blob=await zip.files[path].async('blob');imageUrls[path]=URL.createObjectURL(blob)}
+  for(const path of entries){const blob=await zip.files[path].async('blob');const normalizedPath=path.normalize('NFC');imageUrls[normalizedPath]=URL.createObjectURL(blob)}
   await loadGalleryState();renderTabs();render();
  }catch(e){console.error(e);count.textContent='画像を読み込めません';grid.innerHTML='<div class="empty">aikatsu-images.zip がGitHubにアップロードされているか確認してください</div>'}
 }
