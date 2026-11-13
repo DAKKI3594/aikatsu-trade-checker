@@ -95,6 +95,7 @@ h1{font-size:21px;color:var(--deep);margin:0 0 7px;font-weight:800}
   <div class="settingsRow"><span>管理者ログイン</span><div><button id="loginButton" type="button">ログイン</button><button id="logoutButton" type="button" hidden>ログアウト</button></div></div>
   <div class="settingsRow"><span>並び替え</span><button id="reorderButton" type="button" disabled>管理者ログイン後に利用できます</button></div>
   <button class="save" id="saveButton" type="button" hidden>並び順を保存</button>
+  <button class="save" id="autoSortButton" type="button" hidden>画像名順に自動で並び直す</button>
 </section>
 <div class="viewerTools"><span id="selectedCount">0枚選択中</span><button id="makeListButton" type="button" disabled>お譲り可能リストを画像化</button></div>
 <section id="listPreview" aria-live="polite"></section>
@@ -114,7 +115,7 @@ const auth=firebase.auth(),db=firebase.firestore();
 let current='すべて',imageUrls={},imageEntries={},loadingImages={},orders={},priority=[],selected=new Set(),currentUser=null,isAdmin=false,reorderMode=false,dirty=false,reorderTarget=null;
 const tabs=document.getElementById('tabs'),grid=document.getElementById('grid'),count=document.getElementById('count');
 const reorderPad=document.getElementById('reorderPad'),reorderPadLabel=document.getElementById('reorderPadLabel');
-const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),settingsButton=document.getElementById('settingsButton'),settingsPanel=document.getElementById('settingsPanel'),reorderButton=document.getElementById('reorderButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton');
+const authStatus=document.getElementById('authStatus'),refreshButton=document.getElementById('refreshButton'),settingsButton=document.getElementById('settingsButton'),settingsPanel=document.getElementById('settingsPanel'),reorderButton=document.getElementById('reorderButton'),selectedCount=document.getElementById('selectedCount'),makeListButton=document.getElementById('makeListButton'),listPreview=document.getElementById('listPreview'),loginButton=document.getElementById('loginButton'),logoutButton=document.getElementById('logoutButton'),saveButton=document.getElementById('saveButton'),autoSortButton=document.getElementById('autoSortButton');
 const stateRef=db.collection('tradeGallery').doc('main');
 function seriesFiles(s){return Object.keys(imageEntries).filter(p=>s==='すべて'?p.startsWith('images/'):p.startsWith('images/'+s+'/'))}
 function updateSelectionUI(){selectedCount.textContent=selected.size+'枚選択中';makeListButton.disabled=!selected.size}
@@ -164,6 +165,7 @@ async function saveGalleryState(){
  }catch(e){console.error(e);authStatus.textContent='保存できません（Firestoreルールを確認）'}
 }
 saveButton.onclick=saveGalleryState;
+autoSortButton.onclick=async()=>{if(!isAdmin)return;if(!confirm('保存済みの手動並び順を解除して、画像ファイル名の番号順に全シリーズを並び直します。よろしいですか？'))return;const sorted=SERIES.flatMap(s=>seriesFiles(s)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));orders={'すべて':sorted};for(const s of SERIES)orders[s]=sorted.filter(p=>p.startsWith('images/'+s+'/'));if(current==='最優先')orders[current]=sorted.filter(p=>priority.includes(p));render();markDirty();await saveGalleryState();};
 settingsButton.onclick=()=>{settingsPanel.hidden=!settingsPanel.hidden;settingsButton.setAttribute('aria-expanded',String(!settingsPanel.hidden))};
 reorderButton.onclick=()=>{if(!isAdmin)return;reorderMode=!reorderMode;reorderTarget=null;reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';render()};
 reorderPad.querySelectorAll('[data-direction]').forEach(button=>{
@@ -203,7 +205,7 @@ auth.onAuthStateChanged(user=>{
  if(!isAdmin){reorderMode=false;reorderTarget=null;}
  reorderButton.textContent=reorderMode?'並び替えモード：ON':'並び替えモード：OFF';
  authStatus.textContent=isAdmin?'管理者ログイン中':user?'閲覧モード（編集権限なし）':'未ログイン';
- saveButton.hidden=!(isAdmin&&dirty);render();
+ saveButton.hidden=!(isAdmin&&dirty);autoSortButton.hidden=!isAdmin;render();
 });
 async function loadImages(){
  try{
